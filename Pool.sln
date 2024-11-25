@@ -6,6 +6,35 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolUnitTest", "PoolUnitTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolLoadTest", "PoolLoadTest\PoolLoadTest.csproj", "{DBE0E754-3316-4179-92A6-1BFC6FE03628}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{4A4289A2-6ADB-493F-AFB3-938A219360FD}"
+	ProjectSection(SolutionItems) = preProject
+		.github\ISSUE_TEMPLATE\10_bug_report.yml = .github\ISSUE_TEMPLATE\10_bug_report.yml
+		.github\ISSUE_TEMPLATE\20_feature-request.yml = .github\ISSUE_TEMPLATE\20_feature-request.yml
+		.github\ISSUE_TEMPLATE\30_api-proposal.md = .github\ISSUE_TEMPLATE\30_api-proposal.md
+		.github\ISSUE_TEMPLATE\config.yml = .github\ISSUE_TEMPLATE\config.yml
+		.github\policies\labelManagement.issueOpened.yml = .github\policies\labelManagement.issueOpened.yml
+		.github\policies\labelManagement.issueUpdated.yml = .github\policies\labelManagement.issueUpdated.yml
+		.github\policies\labelManagement.prOpened.yml = .github\policies\labelManagement.prOpened.yml
+		.github\policies\labelManagement.prUpdated.yml = .github\policies\labelManagement.prUpdated.yml
+		.github\policies\scheduledSearch.closeStaleIssuesAndPrs.yml = .github\policies\scheduledSearch.closeStaleIssuesAndPrs.yml
+		.github\policies\scheduledSearch.markNoRecentActivity.yml = .github\policies\scheduledSearch.markNoRecentActivity.yml
+		.github\pull_request_template.md = .github\pull_request_template.md
+		.github\workflows\codeql.yml = .github\workflows\codeql.yml
+		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
+		.github\workflows\greetings.yml = .github\workflows\greetings.yml
+		.github\workflows\label.yml = .github\workflows\label.yml
+		.github\workflows\stale.yml = .github\workflows\stale.yml
+		.editorConfig = .editorConfig
+		.gitignore = .gitignore
+		CODE_OF_CONDUCT.md = CODE_OF_CONDUCT.md
+		icon.ico = icon.ico
+		icon.jpg = icon.jpg
+		IssueManagementPolicies.md = IssueManagementPolicies.md
+		LICENSE.txt = LICENSE.txt
+		README.md = README.md
+		SECURITY.md = SECURITY.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

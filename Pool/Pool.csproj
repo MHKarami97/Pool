@@ -1,9 +1,77 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-    </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;netstandard2.0;net462</TargetFrameworks>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<AnalysisMode>All</AnalysisMode>
+		<LangVersion>12.0</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Title>EasyPool</Title>
+		<Authors>MHKarami97</Authors>
+		<Description>EasyPool</Description>
+		<Copyright>https://github.com/MHKarami97/Pool</Copyright>
+		<PackageProjectUrl>https://github.com/MHKarami97/Pool</PackageProjectUrl>
+		<PackageIcon>icon.jpg</PackageIcon>
+		<RepositoryUrl>https://github.com/MHKarami97/Pool</RepositoryUrl>
+		<RepositoryType>public</RepositoryType>
+		<PackageTags>EasyPool</PackageTags>
+		<PackageReleaseNotes>EasyPool</PackageReleaseNotes>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<FileVersion>1.0.0</FileVersion>
+		<Version>1.0.0</Version>
+		<SignAssembly>true</SignAssembly>
+		<PublicSign>true</PublicSign>
+		<PackageId>EasyPool</PackageId>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<ApplicationIcon>icon.ico</ApplicationIcon>
+		<PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+		<IncludeContentInPack>true</IncludeContentInPack>
+		<AssemblyOriginatorKeyFile>MHKarami97.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+	  <DocumentationFile>bin\Debug\Pool.xml</DocumentationFile>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+	  <DocumentationFile>bin\Release\Pool.xml</DocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="MHKarami97.snk" />
+		<None Remove=".gitignore" />
+		<None Include="icon.jpg">
+			<Pack>true</Pack>
+			<PackagePath></PackagePath>
+			<Visible>True</Visible>
+		</None>
+		<None Include="LICENSE.txt">
+			<Pack>true</Pack>
+			<PackagePath></PackagePath>
+			<Visible>True</Visible>
+		</None>
+		<None Include="README.md">
+			<Pack>true</Pack>
+			<PackagePath></PackagePath>
+			<Visible>True</Visible>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Update="Resources.resx">
+	    <Generator>ResXFileCodeGenerator</Generator>
+	    <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Update="Resources.Designer.cs">
+	    <DesignTime>True</DesignTime>
+	    <AutoGen>True</AutoGen>
+	    <DependentUpon>Resources.resx</DependentUpon>
+	  </Compile>
+	</ItemGroup>
 
 </Project>
