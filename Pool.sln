@@ -2,6 +2,10 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Pool", "Pool\Pool.csproj", "{3D16F60E-D84A-4001-A7C3-2CA4A087F2B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolUnitTest", "PoolUnitTest\PoolUnitTest.csproj", "{FA448494-0250-4DBD-8A98-3C516DDB7838}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoolLoadTest", "PoolLoadTest\PoolLoadTest.csproj", "{DBE0E754-3316-4179-92A6-1BFC6FE03628}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +16,13 @@ Global
 		{3D16F60E-D84A-4001-A7C3-2CA4A087F2B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D16F60E-D84A-4001-A7C3-2CA4A087F2B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3D16F60E-D84A-4001-A7C3-2CA4A087F2B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA448494-0250-4DBD-8A98-3C516DDB7838}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA448494-0250-4DBD-8A98-3C516DDB7838}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA448494-0250-4DBD-8A98-3C516DDB7838}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA448494-0250-4DBD-8A98-3C516DDB7838}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBE0E754-3316-4179-92A6-1BFC6FE03628}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBE0E754-3316-4179-92A6-1BFC6FE03628}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBE0E754-3316-4179-92A6-1BFC6FE03628}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBE0E754-3316-4179-92A6-1BFC6FE03628}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
