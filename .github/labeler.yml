@@ -1,0 +1,6 @@
+"load-test":
+  - "PoolLoadTest/**"
+"unit-test":
+  - "PoolUnitTest/**"
+"pool":
+  - "Pool/**"

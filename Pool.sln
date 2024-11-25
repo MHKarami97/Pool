@@ -19,7 +19,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{4A
 		.github\policies\scheduledSearch.closeStaleIssuesAndPrs.yml = .github\policies\scheduledSearch.closeStaleIssuesAndPrs.yml
 		.github\policies\scheduledSearch.markNoRecentActivity.yml = .github\policies\scheduledSearch.markNoRecentActivity.yml
 		.github\pull_request_template.md = .github\pull_request_template.md
-		.github\workflows\codeql.yml = .github\workflows\codeql.yml
 		.github\workflows\dotnet.yml = .github\workflows\dotnet.yml
 		.github\workflows\greetings.yml = .github\workflows\greetings.yml
 		.github\workflows\label.yml = .github\workflows\label.yml
@@ -33,6 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{4A
 		LICENSE.txt = LICENSE.txt
 		README.md = README.md
 		SECURITY.md = SECURITY.md
+		.github\labeler.yml = .github\labeler.yml
 	EndProjectSection
 EndProject
 Global
