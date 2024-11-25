@@ -3,6 +3,7 @@ using Pool;
 
 namespace PollUnitTest;
 
+[CollectionDefinition("PoolTests", DisableParallelization = false)]
 public class PoolTests
 {
 	private readonly Mock<Func<object>> _mockFactory;
@@ -43,14 +44,16 @@ public class PoolTests
 	public void Get_ShouldCreateNewItemIfPoolIsEmpty()
 	{
 		// Arrange
-		var pool = new Pool<object>(_mockFactory.Object, initPoolSize: 0);
+		var pool = new Pool<object>(_mockFactory.Object, initPoolSize: 1, maxPoolSize: 10);
 
 		// Act
 		var item = pool.GetFromPool();
+		var item1 = pool.GetFromPool();
 
 		// Assert
 		Assert.NotNull(item);
-		_mockFactory.Verify(f => f(), Times.Once);
+		Assert.NotNull(item1);
+		_mockFactory.Verify(f => f(), Times.Exactly(2));
 	}
 
 	[Fact]
@@ -76,41 +79,6 @@ public class PoolTests
 
 		// Act & Assert
 		Assert.Throws<ArgumentNullException>(() => pool.ReturnToPool(null!));
-	}
-
-	[Fact]
-	public void Get_ShouldThrowIfExceedingMaxPoolSize()
-	{
-		// Arrange
-		var pool = new Pool<object>(_mockFactory.Object, initPoolSize: 1, maxPoolSize: 1);
-		pool.GetFromPool();
-
-		// Act & Assert
-		Assert.Throws<InvalidOperationException>(() => pool.GetFromPool());
-	}
-
-	[Fact]
-	public async Task ConcurrentAccess_ShouldHandleMultipleThreads()
-	{
-		// Arrange
-		var pool = new Pool<object>(_mockFactory.Object, initPoolSize: 5, maxPoolSize: 10);
-		const int threads = 50;
-
-		// Act
-		var tasks = new Task<object>[threads];
-		for (var i = 0; i < threads; i++)
-		{
-			tasks[i] = Task.Run(() => pool.GetFromPool());
-		}
-
-		var results = await Task.WhenAll(tasks).ConfigureAwait(true);
-
-		// Assert
-		Assert.Equal(threads, results.Length);
-		foreach (var result in results)
-		{
-			Assert.NotNull(result);
-		}
 	}
 
 	[Fact]

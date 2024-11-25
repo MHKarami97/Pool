@@ -28,7 +28,7 @@ public class Pool<T> : IPool<T> where T : class
 	{
 #if NET8_0
 		ArgumentNullException.ThrowIfNull(factory);
-		ArgumentOutOfRangeException.ThrowIfNegative(initPoolSize);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(initPoolSize);
 #else
 		if (factory is null)
 		{
@@ -55,7 +55,7 @@ public class Pool<T> : IPool<T> where T : class
 		_factory = factory;
 		_maxPoolSize = maxPoolSize;
 		_currentSize = initPoolSize;
-		_semaphore = new SemaphoreSlim(initPoolSize, maxPoolSize);
+		_semaphore = new SemaphoreSlim(maxPoolSize);
 
 		for (var i = 0; i < initPoolSize; i++)
 		{
@@ -111,40 +111,29 @@ public class Pool<T> : IPool<T> where T : class
 		_semaphore.Release();
 	}
 
-	private T Create()
-	{
-		try
-		{
-			var item = _factory();
+	/// <summary>
+	/// Get the number of remaining threads that can enter
+	/// </summary>
+	/// <returns></returns>
+	public int GetCurrentCount() => _semaphore.CurrentCount;
 
-			return item ?? throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
-		}
-		catch (Exception ex)
-		{
-			throw new InvalidOperationException(Resources.Erro_Creation, ex);
-		}
-	}
+	/// <summary>
+	/// Get the current size of the pool.
+	/// </summary>
+	/// <returns></returns>
+	public int GetCurrentSize() => _currentSize;
 
-	private T TryCreate()
-	{
-		var newSize = Interlocked.Increment(ref _currentSize);
+	/// <summary>
+	/// Get the maximum size of the pool.
+	/// </summary>
+	/// <returns></returns>
+	public int GetMaxSize() => _maxPoolSize;
 
-		if (newSize > _maxPoolSize)
-		{
-			_ = Interlocked.Decrement(ref _currentSize);
-			throw new InvalidOperationException(Resources.Poo_Maximum_Capacity);
-		}
-
-		try
-		{
-			return Create();
-		}
-		catch
-		{
-			_ = Interlocked.Decrement(ref _currentSize);
-			throw;
-		}
-	}
+	/// <summary>
+	/// Get the available size of the pool.
+	/// </summary>
+	/// <returns></returns>
+	public int GetAvailableSize() => _maxPoolSize - _currentSize;
 
 	/// <summary>
 	/// Disposes the pool and releases all resources.
@@ -180,5 +169,40 @@ public class Pool<T> : IPool<T> where T : class
 		}
 
 		_disposed = true;
+	}
+
+	private T Create()
+	{
+		try
+		{
+			var item = _factory();
+
+			return item ?? throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
+		}
+		catch (Exception ex)
+		{
+			throw new InvalidOperationException(Resources.Erro_Creation, ex);
+		}
+	}
+
+	private T TryCreate()
+	{
+		var newSize = Interlocked.Increment(ref _currentSize);
+
+		if (newSize >= _maxPoolSize)
+		{
+			_ = Interlocked.Decrement(ref _currentSize);
+			throw new InvalidOperationException(Resources.Poo_Maximum_Capacity);
+		}
+
+		try
+		{
+			return Create();
+		}
+		catch
+		{
+			_ = Interlocked.Decrement(ref _currentSize);
+			throw;
+		}
 	}
 }
