@@ -105,6 +105,15 @@ namespace Pool {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Shrink interval must be at least 30 minutes.
+        /// </summary>
+        internal static string Min_Shrink_Interval {
+            get {
+                return ResourceManager.GetString("Min_Shrink_Interval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pool size exceeded maximum capacity..
         /// </summary>
         internal static string Poo_Maximum_Capacity {

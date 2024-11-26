@@ -1,4 +1,5 @@
 using Moq;
+using PollUnitTest.Utility;
 using Pool;
 
 namespace PollUnitTest;
@@ -112,9 +113,151 @@ public class PoolTests
 	public void Factory_ShouldNotProduceNullItems()
 	{
 		// Arrange
-		var pool = new Pool<object>(_mockFactory.Object, initPoolSize: 5);
+		_ = new Pool<object>(_mockFactory.Object, initPoolSize: 5);
 
 		// Act & Assert
-		Assert.Throws<InvalidOperationException>(() => new Pool<object>(() => null!, 5, 10));
+		Assert.Throws<InvalidOperationException>(() => new Pool<object>(() => null!, null, null, 5, 10));
+	}
+
+	[Fact]
+	public void ShrinkPool_ShouldReducePoolSize()
+	{
+		// Arrange
+		const int InitPoolSize = 5;
+		const int MaxPoolSize = 10;
+		var pool = new Pool<object>(() => new object(), null, TimeSpan.FromMinutes(30), InitPoolSize, MaxPoolSize);
+
+		var items = new List<object>();
+
+		for (var i = 0; i < MaxPoolSize; i++)
+		{
+			items.Add(pool.GetFromPool());
+		}
+
+		foreach (var item in items)
+		{
+			pool.ReturnToPool(item);
+		}
+
+		// Assert initial condition
+		Assert.Equal(MaxPoolSize, pool.GetCurrentSize());
+
+		// Act
+		// Call ShrinkPool directly (simulating timer trigger)
+		var shrinkMethod = pool.GetType().GetMethod("ShrinkPool", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+		shrinkMethod?.Invoke(pool, [InitPoolSize]);
+
+		// Assert final condition
+		Assert.Equal(InitPoolSize, pool.GetCurrentSize());
+	}
+
+	[Fact]
+	public void ShrinkPool_ShouldNotReducePoolSize_BelowInitPoolSize()
+	{
+		// Arrange
+		const int InitPoolSize = 5;
+		const int MaxPoolSize = 10;
+		var pool = new Pool<object>(() => new object(), null, TimeSpan.FromMinutes(30), InitPoolSize, MaxPoolSize);
+
+		// Act
+		// Call ShrinkPool directly (simulating timer trigger)
+		var shrinkMethod = pool.GetType().GetMethod("ShrinkPool", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+		shrinkMethod?.Invoke(pool, [InitPoolSize]);
+
+		// Assert that pool size is not below initial size
+		Assert.Equal(InitPoolSize, pool.GetCurrentSize());
+	}
+
+	[Fact]
+	public void CleanupAction_ShouldBeInvoked_WhenShrink()
+	{
+		// Arrange
+		const int InitPoolSize = 5;
+		const int MaxPoolSize = 10;
+		var mockItem = new Mock<IModel>();
+		var factoryMock = new Mock<Func<IModel>>();
+
+		factoryMock.Setup(f => f()).Returns(mockItem.Object);
+
+		var pool = new Pool<IModel>(
+			factoryMock.Object,
+			CleanupAction,
+			TimeSpan.FromMinutes(30),
+			InitPoolSize,
+			MaxPoolSize
+		);
+
+		// Act
+		var items = new List<IModel>();
+
+		for (var i = 0; i < MaxPoolSize; i++)
+		{
+			items.Add(pool.GetFromPool());
+		}
+
+		foreach (var i in items)
+		{
+			pool.ReturnToPool(i);
+		}
+
+		var shrinkMethod = pool.GetType().GetMethod("ShrinkPool", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+		shrinkMethod?.Invoke(pool, [InitPoolSize]);
+
+		// Assert
+		mockItem.Verify(m => m.Close(), Times.Exactly(InitPoolSize));
+
+		return;
+
+		// Action that will invoke Close method on IModel
+		void CleanupAction(IModel item)
+		{
+			item.Close();
+		}
+	}
+
+	[Fact]
+	public void CleanupAction_ShouldBeInvoked_WhenPoolIsDisposed()
+	{
+		// Arrange
+		const int InitPoolSize = 5;
+		const int MaxPoolSize = 10;
+		var mockItem = new Mock<IModel>();
+		var factoryMock = new Mock<Func<IModel>>();
+
+		factoryMock.Setup(f => f()).Returns(mockItem.Object);
+
+		var pool = new Pool<IModel>(
+			factoryMock.Object,
+			CleanupAction,
+			TimeSpan.FromMinutes(30),
+			InitPoolSize,
+			MaxPoolSize
+		);
+
+		// Act
+		var items = new List<IModel>();
+
+		for (var i = 0; i < MaxPoolSize; i++)
+		{
+			items.Add(pool.GetFromPool());
+		}
+
+		foreach (var i in items)
+		{
+			pool.ReturnToPool(i);
+		}
+
+		pool.Dispose();
+
+		// Assert
+		mockItem.Verify(m => m.Close(), Times.Exactly(MaxPoolSize));
+
+		return;
+
+		// Action that will invoke Close method on IModel
+		void CleanupAction(IModel item)
+		{
+			item.Close();
+		}
 	}
 }

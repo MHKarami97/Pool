@@ -18,9 +18,9 @@
 		<RepositoryType>public</RepositoryType>
 		<PackageTags>EasyPool</PackageTags>
 		<PackageReleaseNotes>EasyPool</PackageReleaseNotes>
-		<AssemblyVersion>1.0.1</AssemblyVersion>
-		<FileVersion>1.0.1</FileVersion>
-		<Version>1.0.1</Version>
+		<AssemblyVersion>1.1.0</AssemblyVersion>
+		<FileVersion>1.1.0</FileVersion>
+		<Version>1.1.0</Version>
 		<SignAssembly>true</SignAssembly>
 		<PublicSign>true</PublicSign>
 		<PackageId>EasyPool</PackageId>

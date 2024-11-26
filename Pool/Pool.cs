@@ -8,10 +8,15 @@ namespace Pool;
 /// <typeparam name="T">The type of objects to be pooled.</typeparam>
 public class Pool<T> : IPool<T> where T : class
 {
+	private readonly TimeSpan _defaultShrinkInterval = TimeSpan.FromMinutes(30);
+	private readonly System.Timers.Timer _shrinkTimer;
+	private readonly Action<T> _cleanupAction;
 	private readonly SemaphoreSlim _semaphore;
 	private readonly ConcurrentBag<T> _items;
+	private readonly object _lock = new();
 	private readonly Func<T> _factory;
 	private readonly int _maxPoolSize;
+	private bool _isShrinking;
 	private int _currentSize;
 	private bool _disposed;
 
@@ -19,12 +24,15 @@ public class Pool<T> : IPool<T> where T : class
 	/// Initializes a new instance of the <see cref="Pool{T}"/> class.
 	/// </summary>
 	/// <param name="factory">A function to create new instances of <typeparamref name="T"/>.</param>
+	/// <param name="cleanupAction">Call on Shrink and Dispose to clean <typeparamref name="T"/>. default is call .Dispose if item is Disposable</param>
+	/// <param name="shrinkInterval">Time interval to shrink unused pools and disposed them, then reset to initPoolSize, default value is 30 min on null param</param>
 	/// <param name="initPoolSize">The initial number of objects to be created and added to the pool. Default is 100.</param>
 	/// <param name="maxPoolSize">The maximum number of objects that can be in the pool. Default is <see cref="int.MaxValue"/>.</param>
 	/// <exception cref="ArgumentNullException">Thrown when <paramref name="factory"/> is null.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="initPoolSize"/> is negative or <paramref name="maxPoolSize"/> is less than or equal to zero.</exception>
+	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="shrinkInterval"/> is less than 30 min (just if not null)</exception>
 	/// <exception cref="ArgumentException">Thrown when <paramref name="maxPoolSize"/> is less than <paramref name="initPoolSize"/>.</exception>
-	public Pool(Func<T> factory, int initPoolSize = 100, int maxPoolSize = int.MaxValue)
+	public Pool(Func<T> factory, Action<T>? cleanupAction = null, TimeSpan? shrinkInterval = null, int initPoolSize = 100, int maxPoolSize = int.MaxValue)
 	{
 #if NET8_0
 		ArgumentNullException.ThrowIfNull(factory);
@@ -51,16 +59,37 @@ public class Pool<T> : IPool<T> where T : class
 			throw new ArgumentException(Resources.Max_Pool_Size_More_Than_Init);
 		}
 
+		if (shrinkInterval != null && shrinkInterval < TimeSpan.FromMinutes(30))
+		{
+			throw new ArgumentOutOfRangeException(nameof(shrinkInterval), Resources.Min_Shrink_Interval);
+		}
+
 		_items = [];
 		_factory = factory;
 		_maxPoolSize = maxPoolSize;
 		_currentSize = initPoolSize;
 		_semaphore = new SemaphoreSlim(maxPoolSize);
+		_cleanupAction = cleanupAction ?? (item =>
+		{
+			if (item is IDisposable disposable)
+			{
+				disposable.Dispose();
+			}
+		});
 
 		for (var i = 0; i < initPoolSize; i++)
 		{
 			_items.Add(Create());
 		}
+
+#if NET8_0
+		_shrinkTimer = new System.Timers.Timer(shrinkInterval ?? _defaultShrinkInterval) { AutoReset = true, Enabled = true };
+		_shrinkTimer.Elapsed += (_, _) => ShrinkPool(initPoolSize);
+#else
+		var interval = shrinkInterval ?? _defaultShrinkInterval;
+		_shrinkTimer = new System.Timers.Timer(interval.TotalMilliseconds) { AutoReset = true, Enabled = true };
+		_shrinkTimer.Elapsed += (_, _) => ShrinkPool(initPoolSize);
+#endif
 	}
 
 	/// <summary>
@@ -74,6 +103,12 @@ public class Pool<T> : IPool<T> where T : class
 
 		try
 		{
+			// Avoid taking items if the pool is shrinking
+			while (_isShrinking)
+			{
+				Thread.SpinWait(1);
+			}
+
 			var item = _items.TryTake(out var result) ? result : TryCreate();
 
 			if (item == null)
@@ -106,6 +141,11 @@ public class Pool<T> : IPool<T> where T : class
 			throw new ArgumentNullException(nameof(item));
 		}
 #endif
+
+		while (_isShrinking)
+		{
+			Thread.SpinWait(1);
+		}
 
 		_items.Add(item);
 		_semaphore.Release();
@@ -158,13 +198,11 @@ public class Pool<T> : IPool<T> where T : class
 		if (disposing)
 		{
 			_semaphore.Dispose();
+			_shrinkTimer.Dispose();
 
 			while (_items.TryTake(out var item))
 			{
-				if (item is IDisposable disposable)
-				{
-					disposable.Dispose();
-				}
+				_cleanupAction(item);
 			}
 		}
 
@@ -189,7 +227,7 @@ public class Pool<T> : IPool<T> where T : class
 	{
 		var newSize = Interlocked.Increment(ref _currentSize);
 
-		if (newSize >= _maxPoolSize)
+		if (newSize > _maxPoolSize)
 		{
 			_ = Interlocked.Decrement(ref _currentSize);
 			throw new InvalidOperationException(Resources.Poo_Maximum_Capacity);
@@ -203,6 +241,42 @@ public class Pool<T> : IPool<T> where T : class
 		{
 			_ = Interlocked.Decrement(ref _currentSize);
 			throw;
+		}
+	}
+
+	private void ShrinkPool(int initPoolSize)
+	{
+		lock (_lock)
+		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			try
+			{
+				_isShrinking = true;
+
+				var itemsToRemove = Math.Max(0, _currentSize - initPoolSize);
+
+				for (var i = 0; i < itemsToRemove; i++)
+				{
+					if (_items.TryTake(out var item))
+					{
+						_cleanupAction(item);
+
+						_ = Interlocked.Decrement(ref _currentSize);
+					}
+					else
+					{
+						break;
+					}
+				}
+			}
+			finally
+			{
+				_isShrinking = false;
+			}
 		}
 	}
 }

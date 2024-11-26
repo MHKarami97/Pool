@@ -3,7 +3,7 @@
 <root>
 	<xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
 		<xsd:element name="root" msdata:IsDataSet="true">
-			
+
 		</xsd:element>
 	</xsd:schema>
 	<resheader name="resmimetype">
@@ -35,5 +35,8 @@
 	</data>
 	<data name="Poo_Maximum_Capacity" xml:space="preserve">
 		<value>Pool size exceeded maximum capacity.</value>
+	</data>
+	<data name="Min_Shrink_Interval" xml:space="preserve">
+		<value>Shrink interval must be at least 30 minutes</value>
 	</data>
 </root>

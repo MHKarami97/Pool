@@ -1,9 +1,13 @@
 ﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AAssert_002Ecs_002Fl_003AC_0021_003FUsers_003FM_002EKarami_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E2_003Fresharper_002Dhost_003FDecompilerCache_003Fdecompiler_003F1d83d3dc29c14b7e95c03dbe447e7cb021420_003F60_003F2eeb8a1b_003FAssert_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AMock_002Ecs_002Fl_003AC_0021_003FUsers_003FM_002EKarami_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E2_003Fresharper_002Dhost_003FDecompilerCache_003Fdecompiler_003F11aa0e509b4c4eeeaed9547dab1ff52b4c400_003Fe4_003F669ddfce_003FMock_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
+	<s:String x:Key="/Default/CodeInspection/ExcludedFiles/FilesAndFoldersToSkip2/=7020124F_002D9FFC_002D4AC3_002D8F3D_002DAAB8E0240759_002Ff_003AMock_002Ecs_002Fl_003AC_0021_003FUsers_003FM_002EKarami_003FAppData_003FRoaming_003FJetBrains_003FRider2024_002E2_003Fresharper_002Dhost_003FSourcesCache_003F83f3959e20d0785c3fa5d87b307c4d4db562aea7947c46644fd16367df8d_003FMock_002Ecs/@EntryIndexedValue">ForceIncluded</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=8649b4b7_002D1845_002D4600_002D9c84_002Dd0eef4483b89/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="PoolTests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;xUnit::FA448494-0250-4DBD-8A98-3C516DDB7838::net8.0::PollUnitTest.PoolTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;xUnit::DBE0E754-3316-4179-92A6-1BFC6FE03628::net8.0::PoolLoadTest.PoolLoadTests.LoadTest_By&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::DBE0E754-3316-4179-92A6-1BFC6FE03628::net8.0::PoolLoadTest.PoolLoadTests.Pool_Should_Handle_Concurrent_Access&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;xUnit::DBE0E754-3316-4179-92A6-1BFC6FE03628::net8.0::PoolLoadTest.PoolLoadTests&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String>
 	<s:Boolean x:Key="/Default/ResxEditorPersonal/CheckedGroups/=Pool_002FResources/@EntryIndexedValue">True</s:Boolean>
