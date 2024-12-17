@@ -68,7 +68,7 @@ public class Pool<T> : IPool<T> where T : class
 		_factory = factory;
 		_maxPoolSize = maxPoolSize;
 		_currentSize = initPoolSize;
-		_semaphore = new SemaphoreSlim(maxPoolSize);
+		_semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
 		_cleanupAction = cleanupAction ?? (item =>
 		{
 			if (item is IDisposable disposable)
