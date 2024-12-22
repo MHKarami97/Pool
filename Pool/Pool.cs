@@ -9,7 +9,7 @@ namespace Pool;
 public class Pool<T> : IPool<T> where T : class
 {
 	private readonly TimeSpan _defaultShrinkInterval = TimeSpan.FromMinutes(30);
-	private TaskCompletionSource<bool>? _shrinkCompletionSource;
+	private TaskCompletionSource<bool> _shrinkCompletionSource;
 	private readonly System.Timers.Timer _shrinkTimer;
 	private readonly Action<T> _cleanupAction;
 	private readonly SemaphoreSlim _semaphore;
@@ -363,7 +363,7 @@ public class Pool<T> : IPool<T> where T : class
 			try
 			{
 				_isShrinking = true;
-				_ = _shrinkCompletionSource?.TrySetResult(true);
+				_ = _shrinkCompletionSource.TrySetResult(true);
 
 				var itemsToRemove = Math.Max(0, _currentSize - initPoolSize);
 
