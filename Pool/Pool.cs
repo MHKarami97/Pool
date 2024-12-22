@@ -15,6 +15,7 @@ public class Pool<T> : IPool<T> where T : class
 	private readonly ConcurrentBag<T> _items;
 	private readonly object _lock = new();
 	private readonly Func<T> _factory;
+	private readonly int _createIncrement;
 	private readonly int _maxPoolSize;
 	private bool _isShrinking;
 	private int _currentSize;
@@ -28,15 +29,17 @@ public class Pool<T> : IPool<T> where T : class
 	/// <param name="shrinkInterval">Time interval to shrink unused pools and disposed them, then reset to initPoolSize, default value is 30 min on null param</param>
 	/// <param name="initPoolSize">The initial number of objects to be created and added to the pool. Default is 100.</param>
 	/// <param name="maxPoolSize">The maximum number of objects that can be in the pool. Default is <see cref="int.MaxValue"/>.</param>
+	/// <param name="createIncrement">When there is no object on pool, how many new item should create</param>
 	/// <exception cref="ArgumentNullException">Thrown when <paramref name="factory"/> is null.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="initPoolSize"/> is negative or <paramref name="maxPoolSize"/> is less than or equal to zero.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="shrinkInterval"/> is less than 30 min (just if not null)</exception>
 	/// <exception cref="ArgumentException">Thrown when <paramref name="maxPoolSize"/> is less than <paramref name="initPoolSize"/>.</exception>
-	public Pool(Func<T> factory, Action<T>? cleanupAction = null, TimeSpan? shrinkInterval = null, int initPoolSize = 100, int maxPoolSize = int.MaxValue)
+	public Pool(Func<T> factory, Action<T>? cleanupAction = null, TimeSpan? shrinkInterval = null, int initPoolSize = 100, int maxPoolSize = int.MaxValue, int createIncrement = 1)
 	{
 #if NET8_0
 		ArgumentNullException.ThrowIfNull(factory);
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(initPoolSize);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(createIncrement);
 #else
 		if (factory is null)
 		{
@@ -46,6 +49,11 @@ public class Pool<T> : IPool<T> where T : class
 		if (initPoolSize < 1)
 		{
 			throw new ArgumentNullException(nameof(initPoolSize));
+		}
+
+		if (createIncrement < 1)
+		{
+			throw new ArgumentNullException(nameof(createIncrement));
 		}
 #endif
 
@@ -59,6 +67,11 @@ public class Pool<T> : IPool<T> where T : class
 			throw new ArgumentException(Resources.Max_Pool_Size_More_Than_Init);
 		}
 
+		if (maxPoolSize - initPoolSize < createIncrement)
+		{
+			throw new ArgumentException(Resources.Max_Create_Increament);
+		}
+
 		if (shrinkInterval != null && shrinkInterval < TimeSpan.FromMinutes(30))
 		{
 			throw new ArgumentOutOfRangeException(nameof(shrinkInterval), Resources.Min_Shrink_Interval);
@@ -68,6 +81,7 @@ public class Pool<T> : IPool<T> where T : class
 		_factory = factory;
 		_maxPoolSize = maxPoolSize;
 		_currentSize = initPoolSize;
+		_createIncrement = createIncrement;
 		_semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
 		_cleanupAction = cleanupAction ?? (item =>
 		{
@@ -109,7 +123,41 @@ public class Pool<T> : IPool<T> where T : class
 				Thread.SpinWait(1);
 			}
 
-			var item = _items.TryTake(out var result) ? result : TryCreate();
+			var item = _items.TryTake(out var result) ? result : TryCreate(_createIncrement);
+
+			if (item == null)
+			{
+				_ = _semaphore.Release();
+				throw new InvalidOperationException(Resources.Failed_Create_Resource);
+			}
+
+			return item;
+		}
+		catch
+		{
+			_ = _semaphore.Release();
+			throw;
+		}
+	}
+
+	/// <summary>
+	/// Retrieves an item from the pool.
+	/// </summary>
+	/// <returns>An item from the pool.</returns>
+	/// <exception cref="InvalidOperationException">Thrown when the pool fails to create a new resource.</exception>
+	public async Task<T> GetFromPoolAsync()
+	{
+		await _semaphore.WaitAsync().ConfigureAwait(false);
+
+		try
+		{
+			// Avoid taking items if the pool is shrinking
+			while (_isShrinking)
+			{
+				Thread.SpinWait(1);
+			}
+
+			var item = _items.TryTake(out var result) ? result : TryCreate(_createIncrement);
 
 			if (item == null)
 			{
@@ -176,6 +224,11 @@ public class Pool<T> : IPool<T> where T : class
 	public int GetAvailableSize() => _maxPoolSize - _currentSize;
 
 	/// <summary>
+	/// Stop Channel pool and Dispose all items
+	/// </summary>
+	public void Stop() => Dispose();
+
+	/// <summary>
 	/// Disposes the pool and releases all resources.
 	/// </summary>
 	public void Dispose()
@@ -209,21 +262,30 @@ public class Pool<T> : IPool<T> where T : class
 		_disposed = true;
 	}
 
-	private T Create()
+	private T TryCreate(int count)
 	{
-		try
+		if (count == 1)
 		{
-			var item = _factory();
+			return TryCreateSingle();
+		}
 
-			return item ?? throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
-		}
-		catch (Exception ex)
+		for (var i = 0; i < count; i++)
 		{
-			throw new InvalidOperationException(Resources.Erro_Creation, ex);
+			try
+			{
+				_ = TryCreateSingle();
+			}
+			catch (InvalidOperationException)
+			{
+			}
 		}
+
+		var item = _items.TryTake(out var result) ? result : throw new InvalidOperationException(Resources.Poo_Maximum_Capacity);
+
+		return item;
 	}
 
-	private T TryCreate()
+	private T TryCreateSingle()
 	{
 		var newSize = Interlocked.Increment(ref _currentSize);
 
@@ -241,6 +303,21 @@ public class Pool<T> : IPool<T> where T : class
 		{
 			_ = Interlocked.Decrement(ref _currentSize);
 			throw;
+		}
+	}
+
+	private T Create()
+	{
+		try
+		{
+			var item = _factory();
+			_items.Add(item);
+
+			return item ?? throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
+		}
+		catch (Exception ex)
+		{
+			throw new InvalidOperationException(Resources.Erro_Creation, ex);
 		}
 	}
 

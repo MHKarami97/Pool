@@ -87,6 +87,15 @@ namespace Pool {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Create Increment must be lower than max - init.
+        /// </summary>
+        internal static string Max_Create_Increament {
+            get {
+                return ResourceManager.GetString("Max_Create_Increament", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Max pool size must be greater than zero..
         /// </summary>
         internal static string Max_pool_Size_Min_Value {

@@ -14,6 +14,18 @@ public interface IPool<T> : IDisposable where T : class
 	T GetFromPool();
 
 	/// <summary>
+	/// Retrieves an item from the pool.
+	/// </summary>
+	/// <returns>An item from the pool.</returns>
+	/// <exception cref="InvalidOperationException">Thrown when the pool fails to create a new resource.</exception>
+	Task<T> GetFromPoolAsync();
+
+	/// <summary>
+	/// Stop Channel pool and Dispose all items
+	/// </summary>
+	void Stop();
+
+	/// <summary>
 	/// Returns an item back to the pool.
 	/// </summary>
 	/// <param name="item">The item to return to the pool.</param>
@@ -24,23 +36,23 @@ public interface IPool<T> : IDisposable where T : class
 	/// Get the number of remaining threads that can enter
 	/// </summary>
 	/// <returns></returns>
-	public int GetCurrentCount();
+	int GetCurrentCount();
 
 	/// <summary>
 	/// Get the current size of the pool.
 	/// </summary>
 	/// <returns></returns>
-	public int GetCurrentSize();
+	int GetCurrentSize();
 
 	/// <summary>
 	/// Get the maximum size of the pool.
 	/// </summary>
 	/// <returns></returns>
-	public int GetMaxSize();
+	int GetMaxSize();
 
 	/// <summary>
 	/// Get the available size of the pool.
 	/// </summary>
 	/// <returns></returns>
-	public int GetAvailableSize();
+	int GetAvailableSize();
 }
