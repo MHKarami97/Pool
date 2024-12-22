@@ -9,6 +9,7 @@ namespace Pool;
 public class Pool<T> : IPool<T> where T : class
 {
 	private readonly TimeSpan _defaultShrinkInterval = TimeSpan.FromMinutes(30);
+	private TaskCompletionSource<bool>? _shrinkCompletionSource;
 	private readonly System.Timers.Timer _shrinkTimer;
 	private readonly Action<T> _cleanupAction;
 	private readonly SemaphoreSlim _semaphore;
@@ -48,12 +49,12 @@ public class Pool<T> : IPool<T> where T : class
 
 		if (initPoolSize < 1)
 		{
-			throw new ArgumentNullException(nameof(initPoolSize));
+			throw new ArgumentOutOfRangeException(nameof(initPoolSize));
 		}
 
 		if (createIncrement < 1)
 		{
-			throw new ArgumentNullException(nameof(createIncrement));
+			throw new ArgumentOutOfRangeException(nameof(createIncrement));
 		}
 #endif
 
@@ -64,12 +65,12 @@ public class Pool<T> : IPool<T> where T : class
 
 		if (maxPoolSize < initPoolSize)
 		{
-			throw new ArgumentException(Resources.Max_Pool_Size_More_Than_Init);
+			throw new ArgumentOutOfRangeException(Resources.Max_Pool_Size_More_Than_Init);
 		}
 
 		if (maxPoolSize - initPoolSize < createIncrement)
 		{
-			throw new ArgumentException(Resources.Max_Create_Increament);
+			throw new ArgumentOutOfRangeException(Resources.Max_Create_Increament);
 		}
 
 		if (shrinkInterval != null && shrinkInterval < TimeSpan.FromMinutes(30))
@@ -83,6 +84,7 @@ public class Pool<T> : IPool<T> where T : class
 		_currentSize = initPoolSize;
 		_createIncrement = createIncrement;
 		_semaphore = new SemaphoreSlim(maxPoolSize, maxPoolSize);
+		_shrinkCompletionSource = new TaskCompletionSource<bool>();
 		_cleanupAction = cleanupAction ?? (item =>
 		{
 			if (item is IDisposable disposable)
@@ -98,11 +100,11 @@ public class Pool<T> : IPool<T> where T : class
 
 #if NET8_0
 		_shrinkTimer = new System.Timers.Timer(shrinkInterval ?? _defaultShrinkInterval) { AutoReset = true, Enabled = true };
-		_shrinkTimer.Elapsed += (_, _) => ShrinkPool(initPoolSize);
+		_shrinkTimer.Elapsed += async (_, _) => await Task.Run(() => ShrinkPool(initPoolSize)).ConfigureAwait(false);
 #else
 		var interval = shrinkInterval ?? _defaultShrinkInterval;
 		_shrinkTimer = new System.Timers.Timer(interval.TotalMilliseconds) { AutoReset = true, Enabled = true };
-		_shrinkTimer.Elapsed += (_, _) => ShrinkPool(initPoolSize);
+		_shrinkTimer.Elapsed += async (_, _) => await Task.Run(() => ShrinkPool(initPoolSize)).ConfigureAwait(false);
 #endif
 	}
 
@@ -118,10 +120,7 @@ public class Pool<T> : IPool<T> where T : class
 		try
 		{
 			// Avoid taking items if the pool is shrinking
-			while (_isShrinking)
-			{
-				Thread.SpinWait(1);
-			}
+			WaitForShrinkToCompleteAsync().Wait();
 
 			_ = _items.TryTake(out var result);
 
@@ -129,8 +128,14 @@ public class Pool<T> : IPool<T> where T : class
 			{
 				lock (_lock)
 				{
-					TryCreate(_createIncrement);
+					//Maybe another thread create item
 					_ = _items.TryTake(out result);
+
+					if (result == null)
+					{
+						TryCreate(_createIncrement);
+						_ = _items.TryTake(out result);
+					}
 				}
 			}
 
@@ -161,17 +166,23 @@ public class Pool<T> : IPool<T> where T : class
 		try
 		{
 			// Avoid taking items if the pool is shrinking
-			while (_isShrinking)
-			{
-				Thread.SpinWait(1);
-			}
+			await WaitForShrinkToCompleteAsync().ConfigureAwait(false);
 
 			_ = _items.TryTake(out var result);
 
 			if (result == null)
 			{
-				TryCreate(_createIncrement);
-				_ = _items.TryTake(out result);
+				lock (_lock)
+				{
+					//Maybe another thread create item
+					_ = _items.TryTake(out result);
+
+					if (result == null)
+					{
+						TryCreate(_createIncrement);
+						_ = _items.TryTake(out result);
+					}
+				}
 			}
 
 			if (result == null)
@@ -204,11 +215,6 @@ public class Pool<T> : IPool<T> where T : class
 			throw new ArgumentNullException(nameof(item));
 		}
 #endif
-
-		while (_isShrinking)
-		{
-			Thread.SpinWait(1);
-		}
 
 		_items.Add(item);
 		_semaphore.Release();
@@ -336,6 +342,15 @@ public class Pool<T> : IPool<T> where T : class
 		}
 	}
 
+	private async Task WaitForShrinkToCompleteAsync()
+	{
+		if (_isShrinking)
+		{
+			// If shrink is in progress, we need to wait until the TaskCompletionSource is set
+			await (_shrinkCompletionSource?.Task ?? Task.CompletedTask).ConfigureAwait(false);
+		}
+	}
+
 	private void ShrinkPool(int initPoolSize)
 	{
 		lock (_lock)
@@ -348,26 +363,37 @@ public class Pool<T> : IPool<T> where T : class
 			try
 			{
 				_isShrinking = true;
+				_ = _shrinkCompletionSource?.TrySetResult(true);
 
 				var itemsToRemove = Math.Max(0, _currentSize - initPoolSize);
 
 				for (var i = 0; i < itemsToRemove; i++)
 				{
-					if (_items.TryTake(out var item))
+					try
 					{
-						_cleanupAction(item);
+						if (_items.TryTake(out var item))
+						{
+							_cleanupAction(item);
 
-						_ = Interlocked.Decrement(ref _currentSize);
+							_ = Interlocked.Decrement(ref _currentSize);
+						}
+						else
+						{
+							break;
+						}
 					}
-					else
+					catch (Exception e)
 					{
-						break;
+						Console.WriteLine(e);
 					}
 				}
 			}
 			finally
 			{
 				_isShrinking = false;
+
+				// After shrinking is complete, reset the TaskCompletionSource for the next time
+				_shrinkCompletionSource = new TaskCompletionSource<bool>();
 			}
 		}
 	}
