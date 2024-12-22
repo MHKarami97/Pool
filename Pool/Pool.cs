@@ -93,7 +93,7 @@ public class Pool<T> : IPool<T> where T : class
 
 		for (var i = 0; i < initPoolSize; i++)
 		{
-			_items.Add(Create());
+			Create();
 		}
 
 #if NET8_0
@@ -123,15 +123,24 @@ public class Pool<T> : IPool<T> where T : class
 				Thread.SpinWait(1);
 			}
 
-			var item = _items.TryTake(out var result) ? result : TryCreate(_createIncrement);
+			_ = _items.TryTake(out var result);
 
-			if (item == null)
+			if (result == null)
+			{
+				lock (_lock)
+				{
+					TryCreate(_createIncrement);
+					_ = _items.TryTake(out result);
+				}
+			}
+
+			if (result == null)
 			{
 				_ = _semaphore.Release();
 				throw new InvalidOperationException(Resources.Failed_Create_Resource);
 			}
 
-			return item;
+			return result;
 		}
 		catch
 		{
@@ -157,15 +166,21 @@ public class Pool<T> : IPool<T> where T : class
 				Thread.SpinWait(1);
 			}
 
-			var item = _items.TryTake(out var result) ? result : TryCreate(_createIncrement);
+			_ = _items.TryTake(out var result);
 
-			if (item == null)
+			if (result == null)
+			{
+				TryCreate(_createIncrement);
+				_ = _items.TryTake(out result);
+			}
+
+			if (result == null)
 			{
 				_ = _semaphore.Release();
 				throw new InvalidOperationException(Resources.Failed_Create_Resource);
 			}
 
-			return item;
+			return result;
 		}
 		catch
 		{
@@ -262,30 +277,21 @@ public class Pool<T> : IPool<T> where T : class
 		_disposed = true;
 	}
 
-	private T TryCreate(int count)
+	private void TryCreate(int count)
 	{
-		if (count == 1)
-		{
-			return TryCreateSingle();
-		}
-
 		for (var i = 0; i < count; i++)
 		{
 			try
 			{
-				_ = TryCreateSingle();
+				TryCreateSingle();
 			}
 			catch (InvalidOperationException)
 			{
 			}
 		}
-
-		var item = _items.TryTake(out var result) ? result : throw new InvalidOperationException(Resources.Poo_Maximum_Capacity);
-
-		return item;
 	}
 
-	private T TryCreateSingle()
+	private void TryCreateSingle()
 	{
 		var newSize = Interlocked.Increment(ref _currentSize);
 
@@ -297,7 +303,7 @@ public class Pool<T> : IPool<T> where T : class
 
 		try
 		{
-			return Create();
+			Create();
 		}
 		catch
 		{
@@ -306,14 +312,23 @@ public class Pool<T> : IPool<T> where T : class
 		}
 	}
 
-	private T Create()
+	private void Create()
 	{
 		try
 		{
 			var item = _factory();
-			_items.Add(item);
 
-			return item ?? throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
+			if (item != null)
+			{
+				_items.Add(item);
+				return;
+			}
+
+			throw new InvalidOperationException(Resources.Factory_Produced_Null_Item);
+		}
+		catch (InvalidOperationException)
+		{
+			throw;
 		}
 		catch (Exception ex)
 		{
