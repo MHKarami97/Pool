@@ -44,17 +44,17 @@ public class Pool<T> : IPool<T> where T : class
 #else
 		if (factory is null)
 		{
-			throw new ArgumentNullException(nameof(factory));
+			throw new ArgumentNullException(nameof(factory), Resources.Object_Can_Not_Be_Null);
 		}
 
 		if (initPoolSize < 1)
 		{
-			throw new ArgumentOutOfRangeException(nameof(initPoolSize));
+			throw new ArgumentOutOfRangeException(nameof(initPoolSize), Resources.Can_Not_Be_Zero);
 		}
 
 		if (createIncrement < 1)
 		{
-			throw new ArgumentOutOfRangeException(nameof(createIncrement));
+			throw new ArgumentOutOfRangeException(nameof(createIncrement), Resources.Can_Not_Be_Zero);
 		}
 #endif
 
@@ -65,12 +65,12 @@ public class Pool<T> : IPool<T> where T : class
 
 		if (maxPoolSize < initPoolSize)
 		{
-			throw new ArgumentOutOfRangeException(Resources.Max_Pool_Size_More_Than_Init);
+			throw new ArgumentOutOfRangeException(nameof(maxPoolSize), Resources.Max_Pool_Size_More_Than_Init);
 		}
 
 		if (maxPoolSize - initPoolSize < createIncrement)
 		{
-			throw new ArgumentOutOfRangeException(Resources.Max_Create_Increament);
+			throw new ArgumentOutOfRangeException(nameof(createIncrement), Resources.Max_Create_Increament);
 		}
 
 		if (shrinkInterval != null && shrinkInterval < TimeSpan.FromMinutes(30))

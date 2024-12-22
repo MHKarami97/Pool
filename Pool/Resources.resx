@@ -42,4 +42,10 @@
 	<data name="Max_Create_Increament" xml:space="preserve">
 		<value>Create Increment must be lower than max - init</value>
 	</data>
+	<data name="Object_Can_Not_Be_Null" xml:space="preserve">
+		<value>Object can not be null</value>
+	</data>
+	<data name="Can_Not_Be_Zero" xml:space="preserve">
+		<value>Value can not be less than 1</value>
+	</data>
 </root>

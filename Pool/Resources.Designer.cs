@@ -60,6 +60,15 @@ namespace Pool {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Value can not be less than 1.
+        /// </summary>
+        internal static string Can_Not_Be_Zero {
+            get {
+                return ResourceManager.GetString("Can_Not_Be_Zero", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error occurred during resource creation..
         /// </summary>
         internal static string Erro_Creation {
@@ -119,6 +128,15 @@ namespace Pool {
         internal static string Min_Shrink_Interval {
             get {
                 return ResourceManager.GetString("Min_Shrink_Interval", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Object can not be null.
+        /// </summary>
+        internal static string Object_Can_Not_Be_Null {
+            get {
+                return ResourceManager.GetString("Object_Can_Not_Be_Null", resourceCulture);
             }
         }
         
