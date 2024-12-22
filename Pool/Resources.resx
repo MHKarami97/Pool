@@ -40,7 +40,7 @@
 		<value>Shrink interval must be at least 30 minutes</value>
 	</data>
 	<data name="Max_Create_Increament" xml:space="preserve">
-		<value>Create Increment must be lower than max - init</value>
+		<value>Create Increment must be lower than max pool size</value>
 	</data>
 	<data name="Object_Can_Not_Be_Null" xml:space="preserve">
 		<value>Object can not be null</value>

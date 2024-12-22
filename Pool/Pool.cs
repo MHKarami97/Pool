@@ -66,7 +66,7 @@ public class Pool<T> : IPool<T> where T : class
 			throw new ArgumentOutOfRangeException(nameof(maxPoolSize), Resources.Max_Pool_Size_More_Than_Init);
 		}
 
-		if (maxPoolSize - initPoolSize < createIncrement)
+		if (maxPoolSize < createIncrement)
 		{
 			throw new ArgumentOutOfRangeException(nameof(createIncrement), Resources.Max_Create_Increament);
 		}

@@ -96,7 +96,7 @@ namespace Pool {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Create Increment must be lower than max - init.
+        ///   Looks up a localized string similar to Create Increment must be lower than max pool size.
         /// </summary>
         internal static string Max_Create_Increament {
             get {
